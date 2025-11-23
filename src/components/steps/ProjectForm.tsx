@@ -199,7 +199,7 @@ export default function ProjectForm({
 
               <div className="flex flex-col gap-2">
                 <label htmlFor="emailAddress" className="form-label text-sm font-medium">
-                  Phone/Email <span className="text-red-500">*</span>
+                  Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="emailAddress"

@@ -108,14 +108,18 @@ export default {
 
           const finalPdf = await PDFDocument.create()
 
+          let submittalFormPageCount = 0
+
           try {
             const templatePdf = await loadAndFillTemplate(projectData, selectedDocumentNames, allAvailableDocuments)
             const submittalFormPages = await finalPdf.copyPages(templatePdf, templatePdf.getPageIndices())
             submittalFormPages.forEach(page => finalPdf.addPage(page))
+            submittalFormPageCount = submittalFormPages.length
             console.log(`Added ${submittalFormPages.length} pages from submittal form`)
           } catch (templateError) {
             console.error('Error loading template:', templateError)
             await addErrorPage(finalPdf, 'Template Error', 'Failed to load template. Using blank document.')
+            submittalFormPageCount = 1
           }
 
           try {
@@ -124,6 +128,13 @@ export default {
             console.error('Error adding product info:', productInfoError)
             await addErrorPage(finalPdf, 'Product Info', 'Failed to add product information.')
           }
+
+          const submittalAndProductInfoPageCount = finalPdf.getPageCount()
+
+          // Insert Table of Contents after submittal form and product info
+          const tocPageNumber = submittalAndProductInfoPageCount + 1
+          const tocPage = await createTableOfContents(finalPdf, [], tocPageNumber)
+          finalPdf.insertPage(submittalAndProductInfoPageCount, tocPage)
 
           const documentSections: DocumentSection[] = []
           let currentPageNumber = finalPdf.getPageCount() + 1
@@ -146,7 +157,7 @@ export default {
                   const pages = await finalPdf.copyPages(sourcePdf, pageIndices)
                   pages.forEach(page => finalPdf.addPage(page))
                   currentPageNumber += pages.length
-                  
+
                   documentSections.push({
                     name: doc.name,
                     type: doc.type,
@@ -167,7 +178,7 @@ export default {
                     const pages = await finalPdf.copyPages(sourcePdf, pageIndices)
                     pages.forEach(page => finalPdf.addPage(page))
                     currentPageNumber += pages.length
-                    
+
                     documentSections.push({
                       name: doc.name,
                       type: doc.type,
@@ -190,9 +201,9 @@ export default {
             }
           }
 
-          const tocPageNumber = finalPdf.getPageCount() + 1
-          const tocPage = await createTableOfContents(finalPdf, documentSections, tocPageNumber)
-          finalPdf.insertPage(tocPageNumber - 1, tocPage)
+          // Update Table of Contents with actual document sections
+          const updatedTocPage = await createTableOfContents(finalPdf, documentSections, tocPageNumber)
+          finalPdf.setPage(submittalAndProductInfoPageCount, updatedTocPage)
 
           await addSelectivePageNumbers(
             finalPdf,
@@ -320,7 +331,8 @@ async function loadAndFillTemplate(projectData: ProjectData, selectedDocumentNam
         { names: ['Project Name', 'projectName', 'project_name'], value: projectData.projectName },
         { names: ['Project Number', 'projectNumber', 'project_number'], value: projectData.projectNumber || '' },
         { names: ['Prepared By', 'preparedBy', 'prepared_by'], value: projectData.preparedBy },
-        { names: ['Phone/Email', 'phoneEmail', 'phone_email', 'PhoneEmail'], value: `${projectData.phoneNumber} / ${projectData.emailAddress}` },
+        { names: ['Email', 'email', 'emailAddress', 'Email Address'], value: projectData.emailAddress },
+        { names: ['Phone', 'phone', 'phoneNumber', 'Phone Number'], value: projectData.phoneNumber },
         { names: ['Date', 'date'], value: projectData.date },
       ]
 
@@ -591,7 +603,10 @@ async function addCoverPage(pdf: PDFDocument, projectData: ProjectData, selected
   drawFormField('Prepared By', projectData.preparedBy, currentY);
   currentY -= (fieldHeight + fieldSpacing);
 
-  drawFormField('Phone/Email', `${projectData.phoneNumber} / ${projectData.emailAddress}`, currentY);
+  drawFormField('Email Address', projectData.emailAddress, currentY);
+  currentY -= (fieldHeight + fieldSpacing);
+
+  drawFormField('Phone Number', projectData.phoneNumber, currentY);
   currentY -= (fieldHeight + fieldSpacing);
 
   drawFormField('Date', projectData.date, currentY);
@@ -1663,34 +1678,23 @@ async function addSectionDivider(pdf: PDFDocument, documentName: string, documen
 
   // Main content - Document name centered
   const centerY = height / 2
-  
-  // Document name (large, centered)
-  const nameSize = 24
+
+  // Document name (large, centered) - displayed only once
+  const nameSize = 40
   const nameWidth = boldFont.widthOfTextAtSize(documentName, nameSize)
   page.drawText(documentName, {
     x: (width - nameWidth) / 2,
-    y: centerY + 20,
+    y: centerY,
     size: nameSize,
     font: boldFont,
     color: rgb(0.13, 0.13, 0.13),
   })
 
-  // Document type (smaller, centered, below name)
-  const typeSize = 14
-  const typeWidth = font.widthOfTextAtSize(documentType, typeSize)
-  page.drawText(documentType, {
-    x: (width - typeWidth) / 2,
-    y: centerY - 20,
-    size: typeSize,
-    font: font,
-    color: rgb(0.4, 0.4, 0.4),
-  })
-
-  // Decorative line
+  // Decorative line below name
   const lineWidth = 200
   page.drawLine({
-    start: { x: (width - lineWidth) / 2, y: centerY - 50 },
-    end: { x: (width + lineWidth) / 2, y: centerY - 50 },
+    start: { x: (width - lineWidth) / 2, y: centerY - 30 },
+    end: { x: (width + lineWidth) / 2, y: centerY - 30 },
     thickness: 2,
     color: rgb(0, 0.637, 0.792), // NexGen blue
   })
