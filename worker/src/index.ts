@@ -333,7 +333,8 @@ async function loadAndFillTemplate(projectData: ProjectData, selectedDocumentNam
         { names: ['Project Number', 'projectNumber', 'project_number'], value: projectData.projectNumber || '' },
         { names: ['Prepared By', 'preparedBy', 'prepared_by'], value: projectData.preparedBy },
         { names: ['Email', 'email', 'emailAddress', 'Email Address'], value: projectData.emailAddress },
-        { names: ['Phone', 'phone', 'phoneNumber', 'Phone Number'], value: projectData.phoneNumber },
+{ names: ['Phone', 'phone', 'phoneNumber', 'Phone Number'], value: projectData.phoneNumber },
+
         { names: ['Date', 'date'], value: projectData.date },
       ]
 
