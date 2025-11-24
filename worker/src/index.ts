@@ -108,7 +108,7 @@ export default {
 
           const finalPdf = await PDFDocument.create()
 
-          llet submittalFormPageCount = 0
+          let submittalFormPageCount = 0
 
 try {
   const templatePdf = await loadAndFillTemplate(projectData, selectedDocumentNames, allAvailableDocuments)

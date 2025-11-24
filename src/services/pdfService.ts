@@ -1,5 +1,6 @@
 // src/services/pdfService.ts
 import type { ProjectFormData, SelectedDocument, Document, ProductType } from '@/types'
+import { documentService } from './documentService'
 
 export class PDFService {
   private workerUrl: string
@@ -32,20 +33,33 @@ export class PDFService {
             // Fetch file data from URL if available
             if (doc.document.url) {
               const response = await fetch(doc.document.url)
-              if (response.ok) {
-                const blob = await response.blob()
-                const reader = new FileReader()
-                fileData = await new Promise((resolve, reject) => {
-                  reader.onloadend = () => {
-                    const base64String = reader.result as string
-                    // Extract base64 data without the data:application/pdf;base64, prefix
-                    const base64Data = base64String.split(',')[1] || ''
-                    resolve(base64Data)
-                  }
-                  reader.onerror = reject
-                  reader.readAsDataURL(blob)
-                })
+              if (!response.ok) {
+                throw new Error(`Failed to fetch document: ${response.status} ${response.statusText}`)
               }
+
+              const blob = await response.blob()
+
+              // Validate blob is a PDF
+              if (blob.type && blob.type !== 'application/pdf') {
+                console.warn(`Document ${doc.document.name} has unexpected type: ${blob.type}`)
+              }
+
+              const reader = new FileReader()
+              fileData = await new Promise((resolve, reject) => {
+                reader.onloadend = () => {
+                  const base64String = reader.result as string
+                  // Extract base64 data without the data:application/pdf;base64, prefix
+                  const base64Data = base64String.split(',')[1] || ''
+                  if (!base64Data) {
+                    reject(new Error('Failed to encode document as base64'))
+                  }
+                  resolve(base64Data)
+                }
+                reader.onerror = () => reject(new Error('Failed to read document file'))
+                reader.readAsDataURL(blob)
+              })
+            } else {
+              throw new Error(`Document ${doc.document.name} has no URL`)
             }
 
             return {
@@ -66,8 +80,13 @@ export class PDFService {
       const productType = formData.productType as ProductType || 'structural-floor'
 
       // Get all documents of this type for the submittal form
-      const response = await fetch(`/api/documents?productType=${productType}`)
-      const allCategoryDocs = response.ok ? await response.json() : []
+      let allCategoryDocs: Document[] = []
+      try {
+        allCategoryDocs = await documentService.getDocumentsByProductType(productType)
+      } catch (error) {
+        console.error('Failed to fetch category documents:', error)
+        // Continue with empty array if fetch fails
+      }
 
       // Prepare request payload with all required fields and defaults
       const payload = {
@@ -159,12 +178,29 @@ export class PDFService {
 
     } catch (error) {
       console.error('Error in generatePacket:', error);
+
+      // Handle network/fetch errors
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error(
           `Cannot connect to PDF Worker at ${this.workerUrl}. ` +
-          'Please check your internet connection and make sure the worker is running.'
+          'Please check your internet connection and verify the worker is accessible.'
         );
       }
+
+      // Handle document loading errors
+      if (error instanceof Error && error.message.includes('Failed to process document')) {
+        throw new Error(
+          'One or more documents could not be loaded. Please verify all documents are accessible and try again.'
+        );
+      }
+
+      // Handle Supabase/storage errors
+      if (error instanceof Error && error.message.toLowerCase().includes('bucket')) {
+        throw new Error(
+          'Document storage is not properly configured. Please contact support or verify your Supabase setup.'
+        );
+      }
+
       throw error instanceof Error ? error : new Error('Failed to generate PDF packet');
     }
   }
