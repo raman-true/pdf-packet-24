@@ -1683,24 +1683,26 @@ async function addSectionDivider(pdf: PDFDocument, documentName: string, documen
   const centerY = height / 2
 
   // Document name (large, centered) - displayed only once
-  const nameSize = 40
-  const nameWidth = boldFont.widthOfTextAtSize(documentName, nameSize)
-  page.drawText(documentName, {
-    x: (width - nameWidth) / 2,
-    y: centerY,
-    size: nameSize,
-    font: boldFont,
-    color: rgb(0.13, 0.13, 0.13),
-  })
+  // Document name (large, centered) - displayed only once
+const nameSize = 40
+const nameWidth = boldFont.widthOfTextAtSize(documentName, nameSize)
+page.drawText(documentName, {
+  x: (width - nameWidth) / 2,
+  y: centerY,
+  size: nameSize,
+  font: boldFont,
+  color: rgb(0.13, 0.13, 0.13),
+})
 
-  // Decorative line below name
-  const lineWidth = 200
-  page.drawLine({
-    start: { x: (width - lineWidth) / 2, y: centerY - 30 },
-    end: { x: (width + lineWidth) / 2, y: centerY - 30 },
-    thickness: 2,
-    color: rgb(0, 0.637, 0.792), // NexGen blue
-  })
+// Decorative line below name
+const lineWidth = 200
+page.drawLine({
+  start: { x: (width - lineWidth) / 2, y: centerY - 30 },
+  end: { x: (width + lineWidth) / 2, y: centerY - 30 },
+  thickness: 2,
+  color: rgb(0, 0.637, 0.792), // NexGen blue
+})
+
 }
 
 // SELECTIVE PAGE NUMBERING (only submittal form, product info, TOC, and section dividers)
