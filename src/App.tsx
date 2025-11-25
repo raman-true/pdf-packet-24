@@ -22,6 +22,9 @@ const STORAGE_KEY = 'pdf-packet-builder-state'
 
 function App() {
   const [appState, setAppState] = useState<AppState>(() => {
+    // Clean up stale documents before loading state
+    storage.cleanupStaleDocuments(STORAGE_KEY)
+
     const savedState = storage.get<AppState>(STORAGE_KEY)
     return {
       currentStep: savedState?.currentStep || 1,

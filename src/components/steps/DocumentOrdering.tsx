@@ -418,11 +418,18 @@ export default function DocumentOrdering({
 
           {/* No Results */}
           {filteredDocuments.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-gray-500 dark:text-gray-400">
-                {formData.productType 
-                  ? `No documents available for ${formData.productType === 'structural-floor' ? 'Structural Floor Panel' : 'Underlayment'}.`
-                  : 'No documents found.'}
+            <div className="text-center py-12">
+              <DocumentCheckIcon className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                No Documents Available
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                {formData.productType
+                  ? `No documents have been uploaded for ${formData.productType === 'structural-floor' ? 'Structural Floor Panels' : 'Underlayment'} yet.`
+                  : 'No documents have been uploaded yet.'}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Please upload documents through the <a href="/admin" className="text-primary-600 dark:text-primary-400 hover:underline font-medium">Admin Panel</a> before generating a packet.
               </p>
             </div>
           )}

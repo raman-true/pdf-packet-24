@@ -188,6 +188,30 @@ export const storage = {
     } catch {
       // Handle storage errors silently
     }
+  },
+
+  cleanupStaleDocuments: (storageKey: string): void => {
+    try {
+      const state = storage.get<any>(storageKey)
+      if (state && state.selectedDocuments && Array.isArray(state.selectedDocuments)) {
+        // Clear selected documents with invalid or missing URLs
+        const validDocuments = state.selectedDocuments.filter((doc: any) => {
+          return doc.document &&
+                 doc.document.url &&
+                 !doc.document.url.includes('Daily%20Healthy%20Lifestyle%20Planner')
+        })
+
+        if (validDocuments.length !== state.selectedDocuments.length) {
+          console.log(`Cleaned up ${state.selectedDocuments.length - validDocuments.length} stale documents from localStorage`)
+          storage.set(storageKey, {
+            ...state,
+            selectedDocuments: validDocuments
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error cleaning up stale documents:', error)
+    }
   }
 }
 

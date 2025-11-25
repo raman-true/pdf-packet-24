@@ -1,18 +1,22 @@
 import type { Document, ProductType } from '@/types'
 import { documentService } from '@/services/documentService'
 
-// Real PDF documents will be fetched from IndexedDB
+// Documents will be fetched from Supabase database
 let availableDocuments: Document[] = [];
 
 // Function to load documents dynamically
 async function loadDocuments(): Promise<void> {
   try {
-    // Load from IndexedDB
+    // Load from Supabase database
     const uploadedDocs = await documentService.getAllDocuments();
     availableDocuments = uploadedDocs;
-    console.log('Documents loaded from local storage:', availableDocuments.length);
+    console.log('Documents loaded from database:', availableDocuments.length);
+
+    if (availableDocuments.length === 0) {
+      console.warn('No documents found in database. Please upload documents through the admin panel.');
+    }
   } catch (error) {
-    console.error('Failed to load documents:', error);
+    console.error('Failed to load documents from database:', error);
     availableDocuments = [];
   }
 }
